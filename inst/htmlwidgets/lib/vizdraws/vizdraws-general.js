@@ -1,10 +1,11 @@
 
 function factory(el, width, height) {
   let options, dims, margin, status, mode;
+
   return {
     setupSvg: () => {
         d3.select(el).selectAll('*').remove();
-        return d3.select(el).append('svg');
+        return d3.select(el).append('svg').attr("id", "svg");
     },
     draw: function(opts, svg) {
       const vis = this;
@@ -438,6 +439,7 @@ function factory(el, width, height) {
 
       // function to switch between bars and distribution
       let toggle_status = (to, duration) => {
+
         // Fade out, change, fade back
         if (opts.display_mode_name) {
           mode_title.interrupt()
@@ -520,6 +522,10 @@ function factory(el, width, height) {
           // Update status
           STATUS = 'discrete';
         }
+
+        status_button_path.attr('fill', STATUS == 'distribution' ? '#000': '#aaa')
+        status_button_icon.attr('fill', STATUS == 'distribution' ? '#000': '#aaa')
+        status_button_background.attr('stroke', STATUS == 'distribution' ? '#000': '#aaa')
       };
 
       let toggle_mode = (to, duration) => {
@@ -552,7 +558,10 @@ function factory(el, width, height) {
               .transition()
               .duration(duration)
               .attr('d', transToDistributionSegments);
+
         }
+        mode_button_icon.attr('fill', MODE == 'posterior' ? '#000': '#aaa')
+        mode_button_background.attr('stroke', MODE == 'posterior' ? '#000': '#aaa')
       };
 
       // create button containers
@@ -563,9 +572,39 @@ function factory(el, width, height) {
                                `translate( ${
                                    width - margin.right -
                                    button_dims.scale *
-                                       (2 * button_dims.width +
+                                       (3 * button_dims.width +
                                         button_dims.buffer)}, 5) scale(${
                                    button_dims.scale})`);
+
+      /*download button*/
+    
+    let svg_dom = document.getElementById("svg")
+
+    let png_button = allButtons.append('g')
+                      .attr('class', 'trans-button png-button')
+
+     png_button.append('rect')
+          .attr('class', 'background')
+          .attr('stroke', '#aaa')
+          .attr('fill', 'white')
+          .style('shape-rendering', 'crispEdges')
+          .attr('transform', `translate(${2*(button_dims.width + button_dims.buffer)}, ${0})`)
+          .attr('width', button_dims.width)
+          .attr('height', button_dims.height)
+          // Rescale so always 1px
+          .style('stroke-width', `${1 / button_dims.scale}`);
+
+      png_button.append('text')
+          .attr('class', 'icon')
+          .attr('fill', "#aaa")
+          .style("font-size","24px")
+          .text('PNG')
+          .attr('text-anchor', 'middle')
+          .attr('alignment-baseline', 'middle')
+          .attr('transform', `translate(${(2.5*button_dims.width + 2*button_dims.buffer)}, ${ button_dims.height / 2})`)
+
+
+
 
       // Button to transition prior/posterior
       let mode_button = allButtons.append('g')
@@ -575,6 +614,9 @@ function factory(el, width, height) {
       // button background/border box
       mode_button.append('rect')
           .attr('class', 'background')
+          .attr('stroke', MODE == 'posterior' ? '#000': '#aaa')
+          .attr('fill', 'white')
+          .style('shape-rendering', 'crispEdges')
           .attr('x', 0)
           .attr('y', 0)
           .attr('width', button_dims.width)
@@ -584,11 +626,16 @@ function factory(el, width, height) {
 
       mode_button.append('text')
           .attr('class', 'icon')
+          .attr('fill', MODE == 'posterior' ? '#000': '#aaa')
+          .style("font-size","24px")
           .text('Posterior')
           .attr('text-anchor', 'middle')
           .attr('alignment-baseline', 'middle')
           .attr('x', button_dims.width / 2)
           .attr('y', button_dims.height / 2);
+
+    let mode_button_icon = mode_button.select('.icon');
+    let mode_button_background = mode_button.select('.background');
 
       let status_button = allButtons.append('g')
                               .attr('class', 'trans-button status-button')
@@ -597,6 +644,9 @@ function factory(el, width, height) {
       // button background/border box
       status_button.append('rect')
           .attr('class', 'background')
+          .attr('class', 'background')
+          .attr('stroke', STATUS == 'distribution' ? '#000': '#aaa')
+          .attr('fill', 'white')
           .attr('x', button_dims.width + button_dims.buffer)
           .attr('y', 0)
           .attr('width', button_dims.width)
@@ -606,6 +656,8 @@ function factory(el, width, height) {
       // x axis in button graphic
       status_button.append('rect')
           .attr('class', 'icon')
+          .attr('stroke', 'none')
+          .attr('fill', STATUS == 'distribution' ? '#000': '#aaa')
           .attr(
               'x',
               button_dims.width + button_dims.buffer +
@@ -617,6 +669,8 @@ function factory(el, width, height) {
       // curve in button graphic
       status_button.append('path')
           .attr('class', 'icon')
+          .attr('stroke', 'none')
+          .attr('fill', STATUS == 'distribution' ? '#000': '#aaa')
           .attr(
               'transform',
               `translate(${
@@ -631,6 +685,11 @@ function factory(el, width, height) {
                   'h0c-6.3,0-9.82,7.46-13.89,16.09-5.88,12.47-13.19,28-31.67,28' +
                   'h0v2h0C24.18,71.35,31.8,55.2,37.92,42.22Z');
 
+    let status_button_path = status_button.select('path');
+    let status_button_icon = status_button.select('.icon');
+    let status_button_background = status_button.select('.background');
+
+
       // button interactions
       status_button.style('cursor', 'pointer').on('click', function(d) {
         toggle_status(
@@ -639,8 +698,10 @@ function factory(el, width, height) {
       });
 
       mode_button.style('cursor', 'pointer').on('click', function(d) {
-        toggle_mode((MODE == 'prior' ? 'posterior' : 'prior'), transDuration);
+        toggle_mode((MODE == 'prior' ? 'posterior' : 'prior'), transDuration);  
       });
+
+      png_button.style('cursor', 'pointer').on('click', ()=> {saveSvgAsPng(svg_dom, "vizdraws.png", {backgroundColor : "white", "encoderOptions" : 1, "excludeCss": true })})
 
       // If only one of prior/posterior chosen, simply don't show button2
       if (!allow_mode_trans) {
@@ -714,6 +775,9 @@ function factory(el, width, height) {
       this.renderValue(options);
 
       // or without uncommenting as of now do nothing
+
     }
   };
+
+
 }
