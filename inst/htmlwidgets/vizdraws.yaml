@@ -17,6 +17,10 @@
     version: 3.4.1
     src: htmlwidgets/lib/jquery
     script: jquery-3.4.1.min.js
+  - name: saveSvgAsPng
+    script: saveSvgAsPng.js
+    src: htmlwidgets/lib/saveSvgAsPng
+    version: 1.4.17
   - name: vizdraws-general
     script: vizdraws-general.js
     src: htmlwidgets/lib/vizdraws
